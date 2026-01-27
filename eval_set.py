@@ -1,34 +1,36 @@
 from pathlib import Path
-from typing import Iterable, Literal, Tuple
+from typing import Iterable
+
+from ..eval_set import Problem
+
+_BASE_DIR = Path(__file__).parent
+_DATASET_DIR = _BASE_DIR / "dataset_spec-to-rtl"
+
+SYSTEM_PROMPT = "You are a Verilog RTL designer that only writes code using correct Verilog syntax."
 
 
 class VerilogEvalV2EvalSet:
-    def __init__(self, task: Literal["spec-to-rtl", "code-complete"] = "spec-to-rtl"):
-        self._base_dir = Path(__file__).parent
-        if task == "spec-to-rtl":
-            self._dataset_dir = self._base_dir / "dataset_spec-to-rtl"
-        elif task == "code-complete":
-            self._dataset_dir = self._base_dir / "dataset_code-complete-iccad2023"
-        else:
-            raise ValueError(f"Unknown task: {task}")
-
-    def get_prompts(self) -> Iterable[Tuple[str, str]]:
-        problems_file = self._dataset_dir / "problems.txt"
+    def get_problems(self) -> Iterable[Problem]:
+        problems_file = _DATASET_DIR / "problems.txt"
 
         for line in problems_file.read_text().splitlines():
             problem_name = line.strip()
             if not problem_name:
                 continue
 
-            prompt_file = self._dataset_dir / f"{problem_name}_prompt.txt"
+            prompt_file = _DATASET_DIR / f"{problem_name}_prompt.txt"
             spec = prompt_file.read_text()
-            wrapped_prompt = f"""You are a Verilog RTL designer that only writes code using correct Verilog syntax.
 
-Question:
+            user_prompt = f"""Question:
 {spec}
 
-Enclose your code with [BEGIN] and [DONE]. Only output the code snippet
-and do NOT output anything else.
+Enclose your code with [BEGIN] and [DONE]. Only output the code snippet and do NOT output anything else.
 
 Answer:"""
-            yield (problem_name, wrapped_prompt)
+
+            yield Problem(
+                eval_set="verilog_eval_v2",
+                name=problem_name,
+                system_prompt=SYSTEM_PROMPT,
+                user_prompt=user_prompt,
+            )
