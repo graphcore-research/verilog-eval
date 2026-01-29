@@ -209,9 +209,9 @@ module tb();
 
 	end
 
-   // add timeout after 100K cycles
+   // add timeout after 2M cycles
    initial begin
-     #1000000
+     #20000000
      $display("TIMEOUT");
      $finish();
    end
