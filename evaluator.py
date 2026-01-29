@@ -20,6 +20,11 @@ async def evaluate(sample: Sample) -> EvalResult:
     if sample.problem not in _PROBLEMS:
         raise ValueError(f"Unknown problem: {sample.problem}")
 
+    # Extract code from between [BEGIN] and [DONE] markers if present
+    code = sample.code
+    if '[BEGIN]' in code and '[DONE]' in code:
+        code = code.split('[BEGIN]', 1)[1].split('[DONE]', 1)[0].strip()
+
     problem_dir = _PROBLEMS[sample.problem]
     test_file = problem_dir / f"{sample.problem}_test.sv"
     ref_file = problem_dir / f"{sample.problem}_ref.sv"
@@ -30,7 +35,7 @@ async def evaluate(sample: Sample) -> EvalResult:
 
         # Write the sample code
         sample_file = tmp_dir / "sample.sv"
-        sample_file.write_text(sample.code)
+        sample_file.write_text(code)
 
         # Compile with iverilog
         compile_cmd = f"iverilog -Wall -Winfloop -Wno-timescale -g2012 -s tb -o test.vvp {sample_file} {test_file} {ref_file}"
