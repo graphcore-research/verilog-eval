@@ -17,8 +17,22 @@ async def evaluate(sample: Sample) -> EvalResult:
     if problem is None:
         raise ValueError(f"Unknown problem: {sample.problem}")
 
+    # Extract code from markdown code fences if present
+    code = sample.code
+    if '```verilog' in code or '```systemverilog' in code or '```' in code:
+        # Find the first code block
+        for fence in ['```verilog', '```systemverilog', '```']:
+            if fence in code:
+                parts = code.split(fence, 1)
+                if len(parts) >= 2:
+                    # Take the content after the fence, up to the closing ```
+                    remaining = parts[1]
+                    if '```' in remaining:
+                        code = remaining.split('```', 1)[0].strip()
+                        break
+
     # Combine test + prompt + completion
-    verilog_code = problem["test"] + "\n" + problem["prompt"] + "\n" + sample.code
+    verilog_code = problem["test"] + "\n" + problem["prompt"] + "\n" + code
     log_parts = []
 
     with tempfile.TemporaryDirectory() as tmp:
