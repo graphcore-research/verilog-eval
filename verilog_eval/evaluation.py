@@ -1,6 +1,6 @@
 from collections import defaultdict, Counter
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import List, Union, Iterable, Dict, Tuple, Optional
+from typing import List, Union, Dict, Tuple, Optional
 import itertools
 
 import numpy as np
@@ -13,7 +13,7 @@ from verilog_eval.execution import check_correctness, clean_up_simulation
 def estimate_pass_at_k(
     num_samples: Union[int, List[int], np.ndarray],
     num_correct: Union[List[int], np.ndarray],
-    k: int
+    k: int,
 ) -> np.ndarray:
     """
     Estimates pass@k of each problem and returns them in an array.
@@ -33,7 +33,9 @@ def estimate_pass_at_k(
         assert len(num_samples) == len(num_correct)
         num_samples_it = iter(num_samples)
 
-    return np.array([estimator(int(n), int(c), k) for n, c in zip(num_samples_it, num_correct)])
+    return np.array(
+        [estimator(int(n), int(c), k) for n, c in zip(num_samples_it, num_correct)]
+    )
 
 
 def contain_passing_completion(
@@ -46,24 +48,24 @@ def contain_passing_completion(
 ) -> Tuple[bool, str]:
 
     with ProcessPoolExecutor(max_workers=n_workers) as executor:
-        
         futures = []
-        
+
         for idx, completion in enumerate(completions):
             args = (problem, completion, timeout, idx, unit_test_length)
             future = executor.submit(check_correctness, *args)
             futures.append(future)
-            
+
         for future in as_completed(futures):
             result = future.result()
             if result["passed"]:
                 return True, completions[result["completion_id"]]
-            
+
     if clean_up:
         clean_up_simulation()
-            
+
     return False, ""
-            
+
+
 def evaluate_functional_correctness(
     sample_file: str,
     problem_file: str,
@@ -82,7 +84,6 @@ def evaluate_functional_correctness(
 
     # Check the generated samples against test suites.
     with ProcessPoolExecutor(max_workers=n_workers) as executor:
-
         futures = []
         completion_id = Counter()
         n_samples = 0
@@ -93,7 +94,13 @@ def evaluate_functional_correctness(
             task_id = sample["task_id"]
             completion = sample["completion"]
             if unit_test:
-                args = (problems[task_id], completion, timeout, completion_id[task_id], 100)
+                args = (
+                    problems[task_id],
+                    completion,
+                    timeout,
+                    completion_id[task_id],
+                    100,
+                )
             else:
                 args = (problems[task_id], completion, timeout, completion_id[task_id])
             future = executor.submit(check_correctness, *args)
@@ -107,7 +114,7 @@ def evaluate_functional_correctness(
         for future in tqdm.tqdm(as_completed(futures), total=len(futures)):
             result = future.result()
             results[result["task_id"]].append((result["completion_id"], result))
-    
+
     if clean_up:
         clean_up_simulation()
 
@@ -122,8 +129,11 @@ def evaluate_functional_correctness(
     correct = np.array(correct)
 
     ks = k
-    pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, correct, k).mean()
-                 for k in ks if (total >= k).all()}
+    pass_at_k = {
+        f"pass@{k}": estimate_pass_at_k(total, correct, k).mean()
+        for k in ks
+        if (total >= k).all()
+    }
 
     # Finally, save the results in one file:
     def combine_results():

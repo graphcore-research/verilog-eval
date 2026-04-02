@@ -19,16 +19,16 @@ async def evaluate(sample: Sample) -> EvalResult:
 
     # Extract code from markdown code fences if present
     code = sample.code
-    if '```verilog' in code or '```systemverilog' in code or '```' in code:
+    if "```verilog" in code or "```systemverilog" in code or "```" in code:
         # Find the first code block
-        for fence in ['```verilog', '```systemverilog', '```']:
+        for fence in ["```verilog", "```systemverilog", "```"]:
             if fence in code:
                 parts = code.split(fence, 1)
                 if len(parts) >= 2:
                     # Take the content after the fence, up to the closing ```
                     remaining = parts[1]
-                    if '```' in remaining:
-                        code = remaining.split('```', 1)[0].strip()
+                    if "```" in remaining:
+                        code = remaining.split("```", 1)[0].strip()
                         break
 
     # Combine test + prompt + completion

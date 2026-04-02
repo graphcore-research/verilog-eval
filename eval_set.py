@@ -19,7 +19,9 @@ QUESTION_PROMPT = (
 
 class VerilogEvalV1EvalSet:
     def get_problems(self) -> Iterable[Problem]:
-        descriptions = read_problems(str(_BASE_DIR / "descriptions" / "VerilogDescription_Human.jsonl"))
+        descriptions = read_problems(
+            str(_BASE_DIR / "descriptions" / "VerilogDescription_Human.jsonl")
+        )
         evals = read_problems(str(_BASE_DIR / "data" / "VerilogEval_Human.jsonl"))
 
         for task_id, desc_task in descriptions.items():
@@ -27,11 +29,13 @@ class VerilogEvalV1EvalSet:
             if eval_task is None:
                 continue
 
-            user_prompt = "\n\n".join([
-                QUESTION_PROMPT,
-                desc_task["detail_description"],
-                eval_task["prompt"],
-            ])
+            user_prompt = "\n\n".join(
+                [
+                    QUESTION_PROMPT,
+                    desc_task["detail_description"],
+                    eval_task["prompt"],
+                ]
+            )
 
             yield Problem(
                 eval_set="verilog_eval_v1",
