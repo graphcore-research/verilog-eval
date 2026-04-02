@@ -17,7 +17,9 @@ result = subprocess.run(command, shell=True, capture_output=True, text=True)
 data = result.stdout
 
 # Parse the output data
-pattern = re.compile(r'\./build_([^_\s]+)_(\S+)_shots(\d+)_n(\d+)/summary\.txt:pass_rate\s+=\s+(\d+\.\d+)')
+pattern = re.compile(
+    r"\./build_([^_\s]+)_(\S+)_shots(\d+)_n(\d+)/summary\.txt:pass_rate\s+=\s+(\d+\.\d+)"
+)
 matches = pattern.findall(data)
 
 # Organize data into a dictionary
@@ -37,12 +39,12 @@ for task_model, data in results.items():
 columns = sorted(columns)
 
 # Write to CSV
-with open('pass_rates.csv', 'w', newline='') as csvfile:
+with open("pass_rates.csv", "w", newline="") as csvfile:
     csvwriter = csv.writer(csvfile)
-    header = ['Model'] + columns
+    header = ["Model"] + columns
     csvwriter.writerow(header)
     for task_model, data in results.items():
-        row = [task_model] + [data.get(col, '') for col in columns]
+        row = [task_model] + [data.get(col, "") for col in columns]
         csvwriter.writerow(row)
 
 print("CSV file 'pass_rates.csv' created successfully.")

@@ -6,7 +6,9 @@ from ..eval_set import Problem
 _BASE_DIR = Path(__file__).parent
 _DATASET_DIR = _BASE_DIR / "dataset_spec-to-rtl"
 
-SYSTEM_PROMPT = "You are a Verilog RTL designer that only writes code using correct Verilog syntax."
+SYSTEM_PROMPT = (
+    "You are a Verilog RTL designer that only writes code using correct Verilog syntax."
+)
 
 
 class VerilogEvalV2EvalSet:

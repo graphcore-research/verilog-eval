@@ -22,8 +22,8 @@ async def evaluate(sample: Sample) -> EvalResult:
 
     # Extract code from between [BEGIN] and [DONE] markers if present
     code = sample.code
-    if '[BEGIN]' in code and '[DONE]' in code:
-        code = code.split('[BEGIN]', 1)[1].split('[DONE]', 1)[0].strip()
+    if "[BEGIN]" in code and "[DONE]" in code:
+        code = code.split("[BEGIN]", 1)[1].split("[DONE]", 1)[0].strip()
 
     problem_dir = _PROBLEMS[sample.problem]
     test_file = problem_dir / f"{sample.problem}_test.sv"
@@ -39,7 +39,9 @@ async def evaluate(sample: Sample) -> EvalResult:
 
         # Compile with iverilog
         compile_cmd = f"iverilog -Wall -Winfloop -Wno-timescale -g2012 -s tb -o test.vvp {sample_file} {test_file} {ref_file}"
-        completed, compile_output = await run_with_timeout(compile_cmd, timeout=30, cwd=tmp_dir)
+        completed, compile_output = await run_with_timeout(
+            compile_cmd, timeout=30, cwd=tmp_dir
+        )
         log_parts.append(f"=== compile ===\n{compile_output}")
 
         if not completed:
@@ -56,7 +58,9 @@ async def evaluate(sample: Sample) -> EvalResult:
             )
 
         # Simulate with vvp (longer timeout since testbench has internal timeout)
-        completed, sim_output = await run_with_timeout("./test.vvp", timeout=60, cwd=tmp_dir)
+        completed, sim_output = await run_with_timeout(
+            "./test.vvp", timeout=60, cwd=tmp_dir
+        )
         log_parts.append(f"=== simulate ===\n{sim_output}")
 
         if not completed or "TIMEOUT" in sim_output:
