@@ -2,6 +2,8 @@ import re
 import tempfile
 from pathlib import Path
 
+from post_training_torchtitan.app.grading import extract_final_markdown_code_block
+
 from ..async_util import run_with_timeout
 from ..evaluator import EvalResult, Sample
 from .verilog_eval.data import read_problems
@@ -11,28 +13,22 @@ _THIS_DIR = Path(__file__).parent
 # Load problem data at module import time
 _PROBLEMS = read_problems(str(_THIS_DIR / "data" / "VerilogEval_Human.jsonl"))
 
+def _extract_code(completion: str) -> str:
+    extracted = extract_final_markdown_code_block(completion)
+    if extracted is None:
+        return ""
+    _language, code = extracted
+    return code
+
 
 async def evaluate(sample: Sample) -> EvalResult:
     problem = _PROBLEMS.get(sample.problem)
     if problem is None:
         raise ValueError(f"Unknown problem: {sample.problem}")
 
-    # Extract code from markdown code fences if present
-    code = sample.code
-    if "```verilog" in code or "```systemverilog" in code or "```" in code:
-        # Find the first code block
-        for fence in ["```verilog", "```systemverilog", "```"]:
-            if fence in code:
-                parts = code.split(fence, 1)
-                if len(parts) >= 2:
-                    # Take the content after the fence, up to the closing ```
-                    remaining = parts[1]
-                    if "```" in remaining:
-                        code = remaining.split("```", 1)[0].strip()
-                        break
-
-    # Combine test + prompt + completion
-    verilog_code = problem["test"] + "\n" + problem["prompt"] + "\n" + code
+    extracted_code = _extract_code(sample.code)
+    # Combine test + prompt + raw extracted completion.
+    verilog_code = problem["test"] + "\n" + problem["prompt"] + "\n" + extracted_code
     log_parts = []
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -48,14 +44,22 @@ async def evaluate(sample: Sample) -> EvalResult:
         if not completed:
             return EvalResult(
                 passed=False,
-                details={"reason": "compile timeout", "log": "\n\n".join(log_parts)},
+                details={
+                    "reason": "compile timeout",
+                    "log": "\n\n".join(log_parts),
+                    "extracted_code": extracted_code,
+                },
             )
 
         vvp_file = tmp_dir / "test.vvp"
         if not vvp_file.exists():
             return EvalResult(
                 passed=False,
-                details={"reason": "compile error", "log": "\n\n".join(log_parts)},
+                details={
+                    "reason": "compile error",
+                    "log": "\n\n".join(log_parts),
+                    "extracted_code": extracted_code,
+                },
             )
 
         # Simulate with vvp
@@ -65,7 +69,11 @@ async def evaluate(sample: Sample) -> EvalResult:
         if not completed:
             return EvalResult(
                 passed=False,
-                details={"reason": "simulation timeout", "log": "\n\n".join(log_parts)},
+                details={
+                    "reason": "simulation timeout",
+                    "log": "\n\n".join(log_parts),
+                    "extracted_code": extracted_code,
+                },
             )
 
         # Parse simulation output
@@ -80,5 +88,9 @@ async def evaluate(sample: Sample) -> EvalResult:
 
         return EvalResult(
             passed=passed,
-            details={"reason": reason, "log": "\n\n".join(log_parts)},
+            details={
+                "reason": reason,
+                "log": "\n\n".join(log_parts),
+                "extracted_code": extracted_code,
+            },
         )

@@ -6,15 +6,15 @@ from .verilog_eval.data import read_problems
 
 _BASE_DIR = Path(__file__).parent
 
-SYSTEM_PROMPT = (
-    "You only complete chats with syntax correct Verilog code. End the Verilog module "
-    "code completion with 'endmodule'. Do not include module, input and output definitions."
-)
+SYSTEM_PROMPT = """\
+You are an expert Verilog hardware designer.
 
-QUESTION_PROMPT = (
-    "Implement the Verilog module based on the following description. Assume that "
-    "signals are positive clock/clk edge triggered unless otherwise stated."
-)
+Complete the given Verilog module.
+
+Return your final answer in a single markdown block formatted with triple backticks followed by the programming language specification.
+
+The module declaration and port list are already provided in the prompt. Do not repeat the module declaration, module name, ports, widths, or parameters. Return only the Verilog statements needed to complete the module, ending with endmodule.
+"""
 
 
 class VerilogEvalV1EvalSet:
@@ -31,7 +31,6 @@ class VerilogEvalV1EvalSet:
 
             user_prompt = "\n\n".join(
                 [
-                    QUESTION_PROMPT,
                     desc_task["detail_description"],
                     eval_task["prompt"],
                 ]
