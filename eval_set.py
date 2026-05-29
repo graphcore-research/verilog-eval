@@ -6,9 +6,15 @@ from ..eval_set import Problem
 _BASE_DIR = Path(__file__).parent
 _DATASET_DIR = _BASE_DIR / "dataset_spec-to-rtl"
 
-SYSTEM_PROMPT = (
-    "You are a Verilog RTL designer that only writes code using correct Verilog syntax."
-)
+SYSTEM_PROMPT = """\
+You are an expert Verilog hardware designer.
+
+Solve the given Verilog problem.
+
+Return your final answer in a single markdown block formatted with triple backticks followed by the programming language specification.
+
+Generate Verilog that matches the module name, ports, widths, and parameters required by the problem. If the problem provides a module declaration, preserve that interface exactly unless the problem explicitly asks you to change it.
+"""
 
 
 class VerilogEvalV2EvalSet:
@@ -23,12 +29,7 @@ class VerilogEvalV2EvalSet:
             prompt_file = _DATASET_DIR / f"{problem_name}_prompt.txt"
             spec = prompt_file.read_text()
 
-            user_prompt = f"""Question:
-{spec}
-
-Enclose your code with [BEGIN] and [DONE]. Only output the code snippet and do NOT output anything else.
-
-Answer:"""
+            user_prompt = f"Question:\n{spec}\n\nAnswer:"
 
             yield Problem(
                 eval_set="verilog_eval_v2",
